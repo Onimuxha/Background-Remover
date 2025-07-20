@@ -1,56 +1,54 @@
 import { pipeline, env, RawImage } from '@xenova/transformers';
 
-// Allow loading remote models (disable local model fallback)
+// Make sure remote model loading is allowed
 env.allowRemoteModels = true;
 env.allowLocalModels = false;
 
 let backgroundRemovalPipeline: any = null;
 
-// Initialize the background removal model pipeline
+// Public model that works without authentication
+const MODEL_ID = 'Xenova/segformer_b2_clothes';
+
+// Initialize the background removal pipeline
 export async function initializeBackgroundRemoval(
   onProgress?: (stage: string, progress: number) => void
 ) {
   if (backgroundRemovalPipeline) return backgroundRemovalPipeline;
 
-  try {
-    onProgress?.('Initializing AI model...', 10);
+  onProgress?.('Initializing AI model...', 10);
 
-    backgroundRemovalPipeline = await pipeline(
-      'image-segmentation',
-      'Xenova/segformer_b2_clothes',
-      {
-        quantized: false,
-        progress_callback: (progress: any) => {
-          if (progress.status === 'downloading') {
-            const percent = Math.round((progress.loaded / progress.total) * 80) + 10;
-            onProgress?.('Downloading model...', percent);
-          } else if (progress.status === 'ready') {
-            onProgress?.('Model ready!', 90);
-          }
+  backgroundRemovalPipeline = await pipeline(
+    'image-segmentation',
+    MODEL_ID,
+    {
+      quantized: false,
+      progress_callback: (progress: any) => {
+        if (progress.status === 'downloading') {
+          const percent = Math.round((progress.loaded / progress.total) * 80) + 10;
+          onProgress?.('Downloading model...', percent);
+        } else if (progress.status === 'ready') {
+          onProgress?.('Model ready!', 90);
         }
       }
-    );
+    }
+  );
 
-    onProgress?.('Model loaded successfully!', 100);
-    return backgroundRemovalPipeline;
-  } catch (error) {
-    console.error('Failed to initialize background removal:', error);
-    throw new Error('Failed to load AI model. Please check your internet connection.');
-  }
+  onProgress?.('Model loaded!', 100);
+  return backgroundRemovalPipeline;
 }
 
-// Helper to load an HTMLImageElement from URL
+// Load an image from a URL
 function loadImageElement(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous'; // Needed for CORS
+    img.crossOrigin = 'anonymous'; // allow CORS
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = url;
   });
 }
 
-// ✅ Main function to remove background and return transparent PNG data URL
+// Main background removal function
 export async function removeBackground(
   imageUrl: string,
   onProgress?: (stage: string, progress: number) => void
@@ -68,7 +66,7 @@ export async function removeBackground(
     onProgress?.('Processing image...', 20);
     const result = await backgroundRemovalPipeline(rawImg);
 
-    onProgress?.('Generating transparent image...', 70);
+    onProgress?.('Cleaning up edges...', 70);
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
@@ -76,77 +74,75 @@ export async function removeBackground(
     canvas.height = imgEl.height;
 
     if (result && result.length > 0) {
-      let personMask = null;
+      let mainMask = null;
       let maxArea = 0;
 
-      // Select the largest foreground object
       for (const segment of result) {
         if (segment.label !== 'background') {
           const area = segment.mask.width * segment.mask.height;
           if (area > maxArea) {
             maxArea = area;
-            personMask = segment.mask;
+            mainMask = segment.mask;
           }
         }
       }
 
-      if (personMask) {
-        // Draw the original image
-        ctx.drawImage(imgEl, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
+      if (!mainMask) throw new Error('No foreground object found.');
 
-        // Create and draw the raw mask
-        const maskCanvas = document.createElement('canvas');
-        const maskCtx = maskCanvas.getContext('2d')!;
-        maskCanvas.width = personMask.width;
-        maskCanvas.height = personMask.height;
+      // Draw the original image
+      ctx.drawImage(imgEl, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
 
-        const maskImageData = maskCtx.createImageData(personMask.width, personMask.height);
-        const maskData = maskImageData.data;
+      // Create raw mask
+      const maskCanvas = document.createElement('canvas');
+      const maskCtx = maskCanvas.getContext('2d')!;
+      maskCanvas.width = mainMask.width;
+      maskCanvas.height = mainMask.height;
 
-        for (let i = 0; i < personMask.data.length; i++) {
-          const pixelIndex = i * 4;
-          const value = personMask.data[i] * 255;
-          maskData[pixelIndex] = value;
-          maskData[pixelIndex + 1] = value;
-          maskData[pixelIndex + 2] = value;
-          maskData[pixelIndex + 3] = 255;
-        }
+      const maskImageData = maskCtx.createImageData(mainMask.width, mainMask.height);
+      const maskData = maskImageData.data;
 
-        maskCtx.putImageData(maskImageData, 0, 0);
-
-        // Resize and blur the mask to feather edges
-        const resizedMaskCanvas = document.createElement('canvas');
-        const resizedMaskCtx = resizedMaskCanvas.getContext('2d')!;
-        resizedMaskCanvas.width = canvas.width;
-        resizedMaskCanvas.height = canvas.height;
-
-        resizedMaskCtx.filter = 'blur(2px)';
-        resizedMaskCtx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
-        resizedMaskCtx.filter = 'none';
-
-        const resizedMaskData = resizedMaskCtx.getImageData(0, 0, canvas.width, canvas.height);
-
-        // ✅ Apply the inverted + smoothed alpha mask
-        for (let i = 0; i < data.length; i += 4) {
-          let maskVal = resizedMaskData.data[i] / 255;
-          maskVal = Math.pow(1 - maskVal, 1.5); // stronger fade near edge
-          data[i + 3] = Math.round(data[i + 3] * maskVal);
-
-        }
-
-        ctx.putImageData(imageData, 0, 0);
-      } else {
-        throw new Error('No foreground object detected in the image');
+      for (let i = 0; i < mainMask.data.length; i++) {
+        const value = mainMask.data[i] * 255;
+        const idx = i * 4;
+        maskData[idx] = value;
+        maskData[idx + 1] = value;
+        maskData[idx + 2] = value;
+        maskData[idx + 3] = 255;
       }
+
+      maskCtx.putImageData(maskImageData, 0, 0);
+
+      // Resize and blur mask for feathered edges
+      const resizedMaskCanvas = document.createElement('canvas');
+      const resizedMaskCtx = resizedMaskCanvas.getContext('2d')!;
+      resizedMaskCanvas.width = canvas.width;
+      resizedMaskCanvas.height = canvas.height;
+
+      resizedMaskCtx.filter = 'blur(4px) brightness(1.2)';
+      resizedMaskCtx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
+      resizedMaskCtx.filter = 'none';
+
+      const resizedMaskData = resizedMaskCtx.getImageData(0, 0, canvas.width, canvas.height);
+
+      // Final alpha mask application
+      for (let i = 0; i < data.length; i += 4) {
+        let maskVal = resizedMaskData.data[i] / 255;
+        maskVal = Math.pow(1 - maskVal, 2.0);
+        data[i + 3] = Math.round(data[i + 3] * maskVal);
+
+        if (data[i + 3] < 10) data[i + 3] = 0;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
     } else {
-      throw new Error('No segmentation results returned');
+      throw new Error('No segmentation results returned.');
     }
 
-    onProgress?.('Finalizing...', 90);
+    onProgress?.('Exporting...', 90);
     const resultUrl = canvas.toDataURL('image/png');
-    onProgress?.('Complete!', 100);
+    onProgress?.('Done!', 100);
 
     return resultUrl;
   } catch (error) {

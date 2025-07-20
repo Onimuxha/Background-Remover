@@ -1,5 +1,5 @@
 // import React from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import { ProcessingState } from '../types';
 
 interface ProcessingIndicatorProps {
@@ -15,8 +15,7 @@ export function ProcessingIndicator({ state }: ProcessingIndicatorProps) {
         <div className="text-center">
           <div className="relative mb-6">
             <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 relative">
-              <Loader2 className="w-8 h-8 text-white animate-spin" />
-              <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-yellow-300 animate-pulse" />
+              <Loader className="w-8 h-8 text-white animate-spin" />
             </div>
           </div>
           
