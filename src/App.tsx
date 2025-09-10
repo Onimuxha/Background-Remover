@@ -8,7 +8,6 @@ import { useDarkMode } from './hooks/useDarkMode';
 import { createImagePreview } from './utils/imageUtils';
 import { removeBackground, initializeBackgroundRemoval } from './utils/backgroundRemoval';
 import { ImageData, ProcessingState } from './types';
-
 import { ShootingStars } from "../src/components/ui/shooting-stars";
 import { StarsBackground } from "../src/components/ui/stars-background";
 import { Highlighter } from './components/ui/highlighter';
@@ -137,7 +136,6 @@ function App() {
                   </p>
                 </div>
               </div>
-
               <div className="flex items-center gap-4">
                 <a
                   href="https://github.com"
@@ -167,14 +165,13 @@ function App() {
               Professional background removal powered by AI. Upload any image and get a perfect transparent PNG in seconds.
               <Highlighter action="underline" color="#9333EA">100% private</Highlighter> — <Highlighter action="box" color="#fff">Nothing is stored,</Highlighter> everything runs in your browser.
             </p>
-
             {/* Feature badges */}
             <div className="flex flex-wrap justify-center gap-3 mt-6">
               {[
-                { label: 'AI Powered', icon: <IconMessageChatbot className="w-4 h-4" /> },
-                { label: 'No Upload Required', icon: <IconUpload className="w-4 h-4" /> },
-                { label: 'High Quality', icon: <IconCarambola className="w-4 h-4" /> },
-                { label: 'Instant Results', icon: <IconBolt className="w-4 h-4" /> },
+                { label: 'AI Powered', icon: <IconMessageChatbot className="w-5 h-5" /> },
+                { label: 'No Upload Required', icon: <IconUpload className="w-5 h-5" /> },
+                { label: 'High Quality', icon: <IconCarambola className="w-5 h-5" /> },
+                { label: 'Instant Results', icon: <IconBolt className="w-5 h-5" /> },
               ].map((feature, index) => (
                 <span
                   key={index}
