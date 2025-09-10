@@ -4,10 +4,13 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Outfit', 'sans-serif'],
+      },
       animation: {
-        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'bounce': 'bounce 1s infinite',
-        'spin': 'spin 1s linear infinite',
+        pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        bounce: 'bounce 1s infinite',
+        spin: 'spin 1s linear infinite',
       },
       backdropBlur: {
         xs: '2px',
@@ -21,8 +24,8 @@ export default {
           '0%': '#8b5cf6',
           '50%': '#ec4899',
           '100%': '#06b6d4',
-        }
-      }
+        },
+      },
     },
   },
   plugins: [],

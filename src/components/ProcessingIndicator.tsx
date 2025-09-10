@@ -1,5 +1,4 @@
-// import React from 'react';
-import { Loader } from 'lucide-react';
+import { IconLoader3 } from '@tabler/icons-react';
 import { ProcessingState } from '../types';
 
 interface ProcessingIndicatorProps {
@@ -15,7 +14,7 @@ export function ProcessingIndicator({ state }: ProcessingIndicatorProps) {
         <div className="text-center">
           <div className="relative mb-6">
             <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 relative">
-              <Loader className="w-8 h-8 text-white animate-spin" />
+              <IconLoader3 size={24} stroke={2} className='animate-spin' />
             </div>
           </div>
           

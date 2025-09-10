@@ -1,5 +1,4 @@
-// import React from 'react';
-import { Moon, Sun } from 'lucide-react';
+import { IconMoonStars, IconSun } from "@tabler/icons-react";
 
 interface DarkModeToggleProps {
   isDark: boolean;
@@ -14,10 +13,10 @@ export function DarkModeToggle({ isDark, onToggle }: DarkModeToggleProps) {
       aria-label="Toggle dark mode"
     >
       <div className="relative w-6 h-6">
-        <Sun className={`absolute inset-0 w-6 h-6 text-yellow-400 transition-all duration-500 ${
+        <IconSun className={`absolute inset-0 w-6 h-6 text-yellow-400 transition-all duration-500 ${
           isDark ? 'rotate-180 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
         }`} />
-        <Moon className={`absolute inset-0 w-6 h-6 text-blue-300 transition-all duration-500 ${
+        <IconMoonStars className={`absolute inset-0 w-6 h-6 text-blue-300 transition-all duration-500 ${
           isDark ? 'rotate-0 scale-100 opacity-100' : '-rotate-180 scale-0 opacity-0'
         }`} />
       </div>
